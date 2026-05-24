@@ -1,0 +1,6 @@
+# Generated projects will be placed here
+*.pyc
+__pycache__/
+.env
+.vscode/
+.idea/
