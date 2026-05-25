@@ -75,13 +75,19 @@ A multi-agent system for building complete projects from prompts through plannin
 ## 🚀 Quick Start
 
 ```bash
-# Install dependencies
+# 1. Clone and enter the project
+cd Coding-agents
+
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# Set environment variables
-export LLM_API_KEY="your-api-key"
+# 3. Create .env file (copy from example)
+cp .env.example .env
 
-# Run the system
+# 4. Add your API key to .env
+# Edit .env and set: LLM_API_KEY=your-key-here
+
+# 5. Run the system!
 python main.py
 ```
 
