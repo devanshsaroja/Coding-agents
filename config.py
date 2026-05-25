@@ -25,7 +25,7 @@ load_env_file()
 @dataclass
 class LLMConfig:
     """LLM Configuration."""
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-3-5-sonnet-20241022"  # Valid Claude model
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     
@@ -39,8 +39,10 @@ class LLMConfig:
         
         # Set model based on provider
         if os.getenv("ANTHROPIC_API_KEY"):
-            if not self.model or "claude" in self.model.lower():
-                self.model = "claude-sonnet-4-20250514"
+            # Override with env var if set, otherwise use default
+            env_model = os.getenv("LLM_MODEL", "")
+            if env_model and "claude" in env_model.lower():
+                self.model = env_model
         elif os.getenv("OPENAI_API_KEY"):
             self.model = os.getenv("LLM_MODEL", "gpt-4o")
 
