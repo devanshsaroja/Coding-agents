@@ -17,11 +17,14 @@ class FrontendAgent:
     
     def __init__(self, config: CodingAgentsConfig):
         self.config = config
+        llm_config = config.llm
+        
         self.llm = LLM(
-            model=config.llm.model,
-            api_key=config.llm.api_key,
-            base_url=config.llm.base_url,
+            model=llm_config.model,
+            api_key=llm_config.api_key,
+            base_url=llm_config.base_url,
         )
+        
         self.agent = Agent(
             llm=self.llm,
             tools=[

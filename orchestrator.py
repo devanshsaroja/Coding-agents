@@ -20,16 +20,12 @@ class OrchestratorAgent:
         self.config = config or CodingAgentsConfig.from_env()
         llm_config = self.config.llm
         
-        # Configure LLM based on provider
+        # Create LLM - provider detection happens in config.py via litellm
         self.llm = LLM(
             model=llm_config.model,
             api_key=llm_config.api_key,
             base_url=llm_config.base_url,
         )
-        
-        if llm_config.provider == "anthropic":
-            # Set custom LLM config for Anthropic
-            self.llm.llm_config["custom_llm_provider"] = "anthropic"
         
         self.agent = Agent(
             llm=self.llm,

@@ -15,7 +15,7 @@ def load_env_file():
                 line = line.strip()
                 if line and not line.startswith("#") and "=" in line:
                     key, value = line.split("=", 1)
-                    os.environ.setdefault(key.strip(), value.strip())
+                    os.environ[key.strip()] = value.strip()
 
 
 # Load .env file on module import
@@ -25,21 +25,24 @@ load_env_file()
 @dataclass
 class LLMConfig:
     """LLM Configuration."""
-    model: str = os.getenv("LLM_MODEL", "claude-sonnet-4-20250514")
-    api_key: Optional[str] = os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("LLM_API_KEY")
-    base_url: Optional[str] = os.getenv("LLM_BASE_URL", "https://api.anthropic.com/v1")
-    provider: str = "anthropic"  # 'anthropic' or 'openai'
+    model: str = "claude-sonnet-4-20250514"
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
     
     def __post_init__(self):
-        # Detect provider from available API keys
+        # Auto-detect from environment
+        self.api_key = (
+            os.getenv("ANTHROPIC_API_KEY") or 
+            os.getenv("OPENAI_API_KEY") or 
+            os.getenv("LLM_API_KEY")
+        )
+        
+        # Set model based on provider
         if os.getenv("ANTHROPIC_API_KEY"):
-            self.provider = "anthropic"
-            self.api_key = os.getenv("ANTHROPIC_API_KEY")
-            self.base_url = "https://api.anthropic.com/v1"
+            if not self.model or "claude" in self.model.lower():
+                self.model = "claude-sonnet-4-20250514"
         elif os.getenv("OPENAI_API_KEY"):
-            self.provider = "openai"
-            self.api_key = os.getenv("OPENAI_API_KEY")
-            self.base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+            self.model = os.getenv("LLM_MODEL", "gpt-4o")
 
 
 @dataclass
