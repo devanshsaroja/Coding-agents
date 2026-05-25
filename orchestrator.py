@@ -18,11 +18,19 @@ class OrchestratorAgent:
     
     def __init__(self, config: Optional[CodingAgentsConfig] = None):
         self.config = config or CodingAgentsConfig.from_env()
+        llm_config = self.config.llm
+        
+        # Configure LLM based on provider
         self.llm = LLM(
-            model=self.config.llm.model,
-            api_key=self.config.llm.api_key,
-            base_url=self.config.llm.base_url,
+            model=llm_config.model,
+            api_key=llm_config.api_key,
+            base_url=llm_config.base_url,
         )
+        
+        if llm_config.provider == "anthropic":
+            # Set custom LLM config for Anthropic
+            self.llm.llm_config["custom_llm_provider"] = "anthropic"
+        
         self.agent = Agent(
             llm=self.llm,
             tools=[
