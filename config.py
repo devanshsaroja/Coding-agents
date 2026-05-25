@@ -25,7 +25,7 @@ load_env_file()
 @dataclass
 class LLMConfig:
     """LLM Configuration."""
-    model: str = "claude-3-5-sonnet-20241022"  # Valid Claude model
+    model: str = "anthropic/claude-3-5-sonnet-20241022"  # litellm format with provider
     api_key: Optional[str] = None
     base_url: Optional[str] = None
     
@@ -39,12 +39,20 @@ class LLMConfig:
         
         # Set model based on provider
         if os.getenv("ANTHROPIC_API_KEY"):
-            # Override with env var if set, otherwise use default
             env_model = os.getenv("LLM_MODEL", "")
-            if env_model and "claude" in env_model.lower():
-                self.model = env_model
+            if env_model:
+                if "/" in env_model:
+                    self.model = env_model  # Already has provider prefix
+                else:
+                    self.model = f"anthropic/{env_model}"
+            else:
+                self.model = "anthropic/claude-3-5-sonnet-20241022"
         elif os.getenv("OPENAI_API_KEY"):
-            self.model = os.getenv("LLM_MODEL", "gpt-4o")
+            env_model = os.getenv("LLM_MODEL", "gpt-4o")
+            if "/" in env_model:
+                self.model = env_model
+            else:
+                self.model = f"openai/{env_model}"
 
 
 @dataclass
