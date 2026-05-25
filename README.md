@@ -75,13 +75,19 @@ A multi-agent system for building complete projects from prompts through plannin
 ## 🚀 Quick Start
 
 ```bash
-# Install dependencies
+# 1. Clone and enter the project
+cd Coding-agents
+
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# Set environment variables
-export LLM_API_KEY="your-api-key"
+# 3. Create .env file (copy from example)
+cp .env.example .env
 
-# Run the system
+# 4. Add your API key to .env
+# Edit .env and set: LLM_API_KEY=your-key-here
+
+# 5. Run the system!
 python main.py
 ```
 
@@ -128,3 +134,27 @@ Coding-agents/
 - Next.js + Express + SQLite
 - Angular + Node.js + MySQL
 - Svelte + NestJS + PostgreSQL
+
+## 🐳 Docker (Optional)
+
+Docker is **NOT required** to run the coding system or generated projects. However, Docker files are created for convenience.
+
+**Without Docker (Recommended for development):**
+```bash
+# Backend
+cd project_dir
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+# Frontend (new terminal)
+cd project_dir/frontend
+npm install
+npm run dev
+```
+
+**With Docker (Optional):**
+```bash
+docker-compose up
+```

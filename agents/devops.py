@@ -17,11 +17,14 @@ class DevOpsAgent:
     
     def __init__(self, config: CodingAgentsConfig):
         self.config = config
+        llm_config = config.llm
+        
         self.llm = LLM(
-            model=config.llm.model,
-            api_key=config.llm.api_key,
-            base_url=config.llm.base_url,
+            model=llm_config.model,
+            api_key=llm_config.api_key,
+            base_url=llm_config.base_url,
         )
+        
         self.agent = Agent(
             llm=self.llm,
             tools=[
@@ -31,7 +34,7 @@ class DevOpsAgent:
         )
         
     def build(self, architecture: Dict[str, Any], project_dir: Path):
-        """Build DevOps configuration based on architecture spec."""
+        """Build DevOps configuration (optional, for Docker deployments)."""
         frontend = architecture.get("stack", {}).get("frontend", "react")
         backend = architecture.get("stack", {}).get("backend", "fastapi")
         database = architecture.get("stack", {}).get("database", "postgresql")
@@ -39,7 +42,7 @@ class DevOpsAgent:
         cwd = str(project_dir)
         conversation = Conversation(agent=self.agent, workspace=cwd)
         
-        build_prompt = f"""You are the DevOps Agent. Set up infrastructure and deployment for this project.
+        build_prompt = f"""You are the DevOps Agent. Create deployment files (OPTIONAL - Docker is not required to run this project).
 
 Stack:
 - Frontend: {frontend}
@@ -48,21 +51,39 @@ Stack:
 
 Project Name: {architecture.get('name', 'project')}
 
-Tasks:
-1. Create Docker Compose file with all services
-2. Create Dockerfile(s) for each component
-3. Set up environment variables (.env.example)
-4. Create docker-compose.yml with proper networking
-5. Add nginx configuration for reverse proxy (optional)
-6. Create CI/CD configuration (.github/workflows/, .gitlab-ci.yml)
-7. Add README with setup instructions
+Create these files ONLY IF user wants Docker deployment:
+1. docker-compose.yml - For running with Docker (optional)
+2. Dockerfile - For containerizing (optional)
+3. .env.example - Environment variables template
 
-Project directory: {project_dir}
+IMPORTANT: This project can run WITHOUT Docker. Create a README.md in the project root 
+with clear instructions for running directly without Docker:
 
-Create actual working configurations. Do not use placeholders.
-Include proper health checks, restart policies, and resource limits."""
+```markdown
+# Running Without Docker
+
+## Backend Setup
+1. cd backend
+2. python -m venv venv
+3. source venv/bin/activate  # Windows: venv\Scripts\activate
+4. pip install -r requirements.txt
+5. Set DATABASE_URL in .env or environment
+6. uvicorn main:app --reload --port 8000
+
+## Frontend Setup
+1. cd frontend
+2. npm install
+3. npm run dev
+
+## Database
+- SQLite: Works out of the box (for development)
+- PostgreSQL: Install locally and run `createdb myproject`
+- MongoDB: Install locally and run `mongod`
+```
+
+Project directory: {project_dir}"""
         
         conversation.send_message(build_prompt)
         conversation.run()
         
-        print(f"  {Colors.success('✓')} DevOps setup complete")
+        print(f"  {Colors.success('✓')} DevOps setup complete (includes non-Docker instructions)")

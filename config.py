@@ -1,16 +1,46 @@
 """Configuration for the Coding Agents system."""
 
 import os
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional
+
+
+def load_env_file():
+    """Load .env file if it exists."""
+    env_path = Path(__file__).parent / ".env"
+    if env_path.exists():
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip()
+
+
+# Load .env file on module import
+load_env_file()
 
 
 @dataclass
 class LLMConfig:
     """LLM Configuration."""
-    model: str = os.getenv("LLM_MODEL", "gpt-4o")
-    api_key: Optional[str] = os.getenv("LLM_API_KEY")
-    base_url: Optional[str] = os.getenv("LLM_BASE_URL")
+    model: str = "claude-3-5-sonnet-20241022"
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    
+    def __post_init__(self):
+        # Auto-detect from environment
+        self.api_key = (
+            os.getenv("ANTHROPIC_API_KEY") or 
+            os.getenv("OPENAI_API_KEY") or 
+            os.getenv("LLM_API_KEY")
+        )
+        
+        # Set model based on provider - use env var if provided
+        env_model = os.getenv("LLM_MODEL", "")
+        if env_model:
+            self.model = env_model
 
 
 @dataclass

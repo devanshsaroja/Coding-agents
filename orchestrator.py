@@ -18,11 +18,15 @@ class OrchestratorAgent:
     
     def __init__(self, config: Optional[CodingAgentsConfig] = None):
         self.config = config or CodingAgentsConfig.from_env()
+        llm_config = self.config.llm
+        
+        # Create LLM - provider detection happens in config.py via litellm
         self.llm = LLM(
-            model=self.config.llm.model,
-            api_key=self.config.llm.api_key,
-            base_url=self.config.llm.base_url,
+            model=llm_config.model,
+            api_key=llm_config.api_key,
+            base_url=llm_config.base_url,
         )
+        
         self.agent = Agent(
             llm=self.llm,
             tools=[
@@ -35,14 +39,31 @@ class OrchestratorAgent:
     def start(self):
         """Start the orchestrator CLI."""
         print(Colors.bold("\n🧙 Welcome to Coding Agents!\n"))
-        print("Describe the project you want to build...\n")
+        print("Describe the project you want to build...")
+        print("(Type your full prompt below. When done, press Enter twice or type END on a new line)\n")
         
-        prompt = input("📝 Your project idea: ").strip()
-        if not prompt:
-            print(Colors.error("Please provide a project description."))
+        prompt = self._get_multiline_input()
+        if not prompt or len(prompt.strip()) < 10:
+            print(Colors.error("Please provide a meaningful project description."))
             return
         
         self.run_workflow(prompt)
+        
+    def _get_multiline_input(self) -> str:
+        """Get multi-line input from user (supports up to 50k+ characters)."""
+        lines = []
+        print("📝 Start typing your prompt below (type 'END' on a new line when finished):\n")
+        while True:
+            try:
+                line = input()
+                # Check for END marker
+                if line.strip().upper() == "END":
+                    break
+                lines.append(line)
+            except EOFError:
+                break
+        
+        return "\n".join(lines)
         
     def run_workflow(self, prompt: str):
         """Run the complete workflow from prompt to running project."""
@@ -214,29 +235,61 @@ while maintaining the overall structure. Save the updated version."""
         print(Colors.success("\n✅ All agents completed!"))
         
     def _run_project(self, architecture: Dict[str, Any], project_dir: Path):
-        """Start the built project."""
+        """Start the built project without Docker."""
         stack = architecture.get("stack", {})
+        frontend = stack.get("frontend", "react")
         backend = stack.get("backend", "fastapi")
+        database = stack.get("database", "postgresql")
         
-        print(f"\n{Colors.bold('🎬 Starting the project...')}\n")
+        print(f"\n{Colors.bold('🎬 Starting the project (no Docker)...')}\n")
         
         cwd = str(project_dir)
         conversation = Conversation(agent=self.agent, workspace=cwd)
         
-        run_prompt = f"""Start the project. Common commands:
-- FastAPI: uvicorn main:app --reload --port 8000
-- Django: python manage.py runserver
-- Express: npm start
-- NestJS: npm run start:dev
+        run_prompt = f"""The project has been built! Here are instructions to run it WITHOUT Docker:
 
-Install dependencies first if needed (pip install, npm install, etc.)
-Start the server and confirm it's running."""
+FOR {backend.upper()} BACKEND:
+1. Create virtual environment: python -m venv venv
+2. Activate: source venv/bin/activate  (Linux/Mac) or venv\\Scripts\\activate (Windows)
+3. Install dependencies: pip install -r requirements.txt
+4. Setup database: 
+   - PostgreSQL: createdb myproject or use DATABASE_URL env var
+   - SQLite: already included, no setup needed
+   - MongoDB: ensure mongod is running
+5. Run migrations if any: python manage.py migrate OR alembic upgrade head
+6. Start server:
+   - FastAPI: uvicorn main:app --reload --port 8000
+   - Django: python manage.py runserver 0.0.0.0:8000
+   - Express: npm install && npm start (port 3000)
+   - NestJS: npm install && npm run start:dev
+
+FOR {frontend.upper()} FRONTEND:
+1. cd into frontend folder: cd frontend OR cd client
+2. npm install
+3. npm run dev OR npm start
+
+STARTING BOTH:
+- Open two terminal windows
+- Terminal 1: Start backend first
+- Terminal 2: Start frontend
+
+IMPORTANT: Set environment variables first!
+  - DATABASE_URL (your database connection string)
+  - API_URL (backend URL, e.g., http://localhost:8000)
+  - SECRET_KEY (for authentication)
+
+Do NOT use docker-compose. Install and run everything directly on your machine.
+If backend needs CORS setup for frontend, update the CORS middleware config.
+Print clear instructions for starting both frontend and backend."""
         
         conversation.send_message(run_prompt)
         conversation.run()
         
-        print(Colors.success("\n🎉 Project is running!"))
-        print(f"   Check {project_dir} for the generated code.")
+        print(Colors.success("\n✅ Instructions provided!"))
+        print(f"\nCheck {project_dir} for the generated code.")
+        print("\nTo run without Docker:")
+        print(f"  1. Backend: cd {project_dir} && pip install -r requirements.txt && uvicorn main:app --reload")
+        print(f"  2. Frontend: cd {project_dir}/frontend && npm install && npm run dev")
         
     def _print_architecture(self, architecture: Dict[str, Any], detailed: bool = False):
         """Print architecture summary."""
