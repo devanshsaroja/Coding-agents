@@ -128,3 +128,27 @@ Coding-agents/
 - Next.js + Express + SQLite
 - Angular + Node.js + MySQL
 - Svelte + NestJS + PostgreSQL
+
+## 🐳 Docker (Optional)
+
+Docker is **NOT required** to run the coding system or generated projects. However, Docker files are created for convenience.
+
+**Without Docker (Recommended for development):**
+```bash
+# Backend
+cd project_dir
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+# Frontend (new terminal)
+cd project_dir/frontend
+npm install
+npm run dev
+```
+
+**With Docker (Optional):**
+```bash
+docker-compose up
+```

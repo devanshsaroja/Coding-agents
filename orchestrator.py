@@ -214,29 +214,61 @@ while maintaining the overall structure. Save the updated version."""
         print(Colors.success("\n✅ All agents completed!"))
         
     def _run_project(self, architecture: Dict[str, Any], project_dir: Path):
-        """Start the built project."""
+        """Start the built project without Docker."""
         stack = architecture.get("stack", {})
+        frontend = stack.get("frontend", "react")
         backend = stack.get("backend", "fastapi")
+        database = stack.get("database", "postgresql")
         
-        print(f"\n{Colors.bold('🎬 Starting the project...')}\n")
+        print(f"\n{Colors.bold('🎬 Starting the project (no Docker)...')}\n")
         
         cwd = str(project_dir)
         conversation = Conversation(agent=self.agent, workspace=cwd)
         
-        run_prompt = f"""Start the project. Common commands:
-- FastAPI: uvicorn main:app --reload --port 8000
-- Django: python manage.py runserver
-- Express: npm start
-- NestJS: npm run start:dev
+        run_prompt = f"""The project has been built! Here are instructions to run it WITHOUT Docker:
 
-Install dependencies first if needed (pip install, npm install, etc.)
-Start the server and confirm it's running."""
+FOR {backend.upper()} BACKEND:
+1. Create virtual environment: python -m venv venv
+2. Activate: source venv/bin/activate  (Linux/Mac) or venv\\Scripts\\activate (Windows)
+3. Install dependencies: pip install -r requirements.txt
+4. Setup database: 
+   - PostgreSQL: createdb myproject or use DATABASE_URL env var
+   - SQLite: already included, no setup needed
+   - MongoDB: ensure mongod is running
+5. Run migrations if any: python manage.py migrate OR alembic upgrade head
+6. Start server:
+   - FastAPI: uvicorn main:app --reload --port 8000
+   - Django: python manage.py runserver 0.0.0.0:8000
+   - Express: npm install && npm start (port 3000)
+   - NestJS: npm install && npm run start:dev
+
+FOR {frontend.upper()} FRONTEND:
+1. cd into frontend folder: cd frontend OR cd client
+2. npm install
+3. npm run dev OR npm start
+
+STARTING BOTH:
+- Open two terminal windows
+- Terminal 1: Start backend first
+- Terminal 2: Start frontend
+
+IMPORTANT: Set environment variables first!
+  - DATABASE_URL (your database connection string)
+  - API_URL (backend URL, e.g., http://localhost:8000)
+  - SECRET_KEY (for authentication)
+
+Do NOT use docker-compose. Install and run everything directly on your machine.
+If backend needs CORS setup for frontend, update the CORS middleware config.
+Print clear instructions for starting both frontend and backend."""
         
         conversation.send_message(run_prompt)
         conversation.run()
         
-        print(Colors.success("\n🎉 Project is running!"))
-        print(f"   Check {project_dir} for the generated code.")
+        print(Colors.success("\n✅ Instructions provided!"))
+        print(f"\nCheck {project_dir} for the generated code.")
+        print("\nTo run without Docker:")
+        print(f"  1. Backend: cd {project_dir} && pip install -r requirements.txt && uvicorn main:app --reload")
+        print(f"  2. Frontend: cd {project_dir}/frontend && npm install && npm run dev")
         
     def _print_architecture(self, architecture: Dict[str, Any], detailed: bool = False):
         """Print architecture summary."""
