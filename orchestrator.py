@@ -35,14 +35,31 @@ class OrchestratorAgent:
     def start(self):
         """Start the orchestrator CLI."""
         print(Colors.bold("\n🧙 Welcome to Coding Agents!\n"))
-        print("Describe the project you want to build...\n")
+        print("Describe the project you want to build...")
+        print("(Type your full prompt below. When done, press Enter twice or type END on a new line)\n")
         
-        prompt = input("📝 Your project idea: ").strip()
-        if not prompt:
-            print(Colors.error("Please provide a project description."))
+        prompt = self._get_multiline_input()
+        if not prompt or len(prompt.strip()) < 10:
+            print(Colors.error("Please provide a meaningful project description."))
             return
         
         self.run_workflow(prompt)
+        
+    def _get_multiline_input(self) -> str:
+        """Get multi-line input from user (supports up to 50k+ characters)."""
+        lines = []
+        print("📝 Start typing your prompt below (type 'END' on a new line when finished):\n")
+        while True:
+            try:
+                line = input()
+                # Check for END marker
+                if line.strip().upper() == "END":
+                    break
+                lines.append(line)
+            except EOFError:
+                break
+        
+        return "\n".join(lines)
         
     def run_workflow(self, prompt: str):
         """Run the complete workflow from prompt to running project."""
